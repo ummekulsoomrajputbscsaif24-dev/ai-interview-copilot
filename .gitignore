@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+venv/
+venvvenv/
+interview.db
+data/Resume.csv
+.vscode/

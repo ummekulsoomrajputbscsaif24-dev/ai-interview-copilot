@@ -1,0 +1,48 @@
+{
+  "INFORMATION-TECHNOLOGY": [
+    {"q": "What is the difference between a list and a tuple in Python?", "keywords": ["mutable", "immutable", "ordered", "list", "tuple"]},
+    {"q": "Explain what a database index is and why it is used.", "keywords": ["index", "fast", "search", "query", "performance"]},
+    {"q": "What is the difference between SQL and NoSQL databases?", "keywords": ["structured", "schema", "tables", "flexible", "scalable"]},
+    {"q": "What is object oriented programming? Name its main principles.", "keywords": ["class", "object", "inheritance", "encapsulation", "polymorphism"]},
+    {"q": "How do you debug a program that is giving wrong output?", "keywords": ["debug", "test", "logs", "error", "step"]}
+  ],
+  "HR": [
+    {"q": "How would you handle a conflict between two employees?", "keywords": ["listen", "neutral", "communication", "solution", "policy"]},
+    {"q": "Describe your recruitment process from job posting to hiring.", "keywords": ["posting", "screening", "interview", "selection", "offer"]},
+    {"q": "How do you measure employee satisfaction?", "keywords": ["survey", "feedback", "retention", "engagement", "turnover"]},
+    {"q": "What is the importance of onboarding for new employees?", "keywords": ["orientation", "training", "culture", "productivity", "retention"]}
+  ],
+  "ACCOUNTANT": [
+    {"q": "What is the difference between accounts payable and accounts receivable?", "keywords": ["owe", "supplier", "customer", "owed", "payment"]},
+    {"q": "Explain the three main financial statements.", "keywords": ["balance", "income", "cash", "flow", "statement"]},
+    {"q": "What is depreciation and why is it recorded?", "keywords": ["asset", "value", "time", "expense", "useful"]},
+    {"q": "How do you perform a bank reconciliation?", "keywords": ["bank", "statement", "ledger", "match", "difference"]}
+  ],
+  "TEACHER": [
+    {"q": "How do you handle a student who is not interested in studying?", "keywords": ["motivate", "understand", "engage", "interest", "support"]},
+    {"q": "How do you prepare a lesson plan?", "keywords": ["objective", "activities", "assessment", "time", "resources"]},
+    {"q": "How do you assess whether students have understood a topic?", "keywords": ["quiz", "feedback", "questions", "assessment", "observation"]},
+    {"q": "How do you manage a classroom with students of different abilities?", "keywords": ["differentiate", "support", "groups", "individual", "level"]}
+  ],
+  "SALES": [
+    {"q": "How do you handle a customer who says your product is too expensive?", "keywords": ["value", "benefits", "listen", "needs", "alternative"]},
+    {"q": "Describe the steps of your sales process.", "keywords": ["prospect", "pitch", "needs", "negotiate", "close"]},
+    {"q": "How do you deal with rejection from a client?", "keywords": ["learn", "positive", "feedback", "follow", "persistence"]},
+    {"q": "How do you achieve your monthly sales target?", "keywords": ["plan", "leads", "follow", "customers", "track"]}
+  ],
+  "ENGINEERING": [
+    {"q": "Describe a technical problem you solved and how you approached it.", "keywords": ["problem", "analysis", "solution", "test", "result"]},
+    {"q": "How do you ensure quality and safety in your engineering work?", "keywords": ["standards", "testing", "inspection", "safety", "documentation"]},
+    {"q": "How do you manage a project with a tight deadline?", "keywords": ["plan", "priority", "schedule", "team", "communication"]},
+    {"q": "What is the importance of documentation in engineering projects?", "keywords": ["record", "maintenance", "reference", "clarity", "team"]}
+  ],
+  "GENERAL": [
+    {"q": "How do you prioritize tasks when you have many deadlines?", "keywords": ["priority", "deadline", "plan", "important", "schedule"]},
+    {"q": "Describe a time you worked in a team to achieve a goal.", "keywords": ["team", "role", "communication", "goal", "result"]},
+    {"q": "How do you handle criticism from your manager?", "keywords": ["listen", "improve", "feedback", "learn", "positive"]},
+    {"q": "Why do you want to work in this field?", "keywords": ["interest", "skills", "growth", "passion", "experience"]}
+  ],
+  "INTRO": [
+    {"q": "Tell me about yourself and your background.", "keywords": ["education", "experience", "skills", "project", "goal"]}
+  ]
+}

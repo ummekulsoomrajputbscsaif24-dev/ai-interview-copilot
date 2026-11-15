@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Interview Copilot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="card">
+    <h1>AI Interview Copilot</h1>
+    <p>Upload your resume and get role-specific interview questions with feedback.</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form action="/start" method="post" enctype="multipart/form-data">
+      <label>Upload resume (PDF)</label>
+      <input type="file" name="resume_file" accept=".pdf">
+      <p class="or">or paste resume text</p>
+      <textarea name="resume_text" rows="8" placeholder="Paste your resume text here..."></textarea>
+      <button type="submit">Start Interview</button>
+    </form>
+  </div>
+</body>
+</html>

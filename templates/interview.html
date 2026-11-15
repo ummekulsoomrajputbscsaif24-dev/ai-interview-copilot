@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interview</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="card">
+    <p class="meta">Predicted role: <b>{{ category }}</b><br>Skills found: {{ skills or "none" }}</p>
+    <p id="progress"></p>
+    <h2 id="question"></h2>
+
+    <textarea id="answer" rows="6" placeholder="Type your answer or use the mic..."></textarea>
+    <div class="row">
+      <button id="mic" type="button">🎤 Speak</button>
+      <button id="submit" type="button">Submit Answer</button>
+    </div>
+
+    <div id="feedback" class="feedback" style="display:none;"></div>
+    <button id="next" type="button" style="display:none;">Next Question</button>
+  </div>
+
+<script>
+  const questions = {{ questions | tojson }};
+  let current = 0;
+
+  const qEl = document.getElementById("question");
+  const progEl = document.getElementById("progress");
+  const ansEl = document.getElementById("answer");
+  const fbEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next");
+  const submitBtn = document.getElementById("submit");
+
+  function speak(text) {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      window.speechSynthesis.speak(u);
+    }
+  }
+
+  function showQuestion() {
+    qEl.textContent = questions[current];
+    progEl.textContent = "Question " + (current + 1) + " of " + questions.length;
+    ansEl.value = "";
+    fbEl.style.display = "none";
+    nextBtn.style.display = "none";
+    submitBtn.style.display = "inline-block";
+    speak(questions[current]);
+  }
+
+  submitBtn.onclick = async () => {
+    const res = await fetch("/answer", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({index: current, answer: ansEl.value})
+    });
+    const r = await res.json();
+    fbEl.innerHTML = "<b>Score: " + r.score + "/100</b><br>" + r.feedback.join(" ");
+    fbEl.style.display = "block";
+    submitBtn.style.display = "none";
+    nextBtn.style.display = "inline-block";
+    nextBtn.textContent = current === questions.length - 1 ? "See Results" : "Next Question";
+  };
+
+  nextBtn.onclick = () => {
+    if (current === questions.length - 1) {
+      window.location.href = "/result";
+    } else {
+      current++;
+      showQuestion();
+    }
+  };
+
+  // Voice input (works in Chrome / Edge)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById("mic");
+  if (SR) {
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.continuous = true;
+    let listening = false;
+    micBtn.onclick = () => {
+      if (!listening) { rec.start(); micBtn.textContent = "⏹ Stop"; listening = true; }
+      else { rec.stop(); micBtn.textContent = "🎤 Speak"; listening = false; }
+    };
+    rec.onresult = (e) => {
+      let text = "";
+      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript + " ";
+      ansEl.value = text.trim();
+    };
+  } else {
+    micBtn.style.display = "none";
+  }
+
+  showQuestion();
+</script>
+</body>
+</html>
