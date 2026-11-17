@@ -1,22 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Interview Copilot</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('ic_theme')||'dark'}catch(e){}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h1>AI Interview Copilot</h1>
-    <p>Upload your resume and get role-specific interview questions with feedback.</p>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
-    <form action="/start" method="post" enctype="multipart/form-data">
-      <label>Upload resume (PDF)</label>
-      <input type="file" name="resume_file" accept=".pdf">
-      <p class="or">or paste resume text</p>
-      <textarea name="resume_text" rows="8" placeholder="Paste your resume text here..."></textarea>
-      <button type="submit">Start Interview</button>
-    </form>
+<div class="top">
+  <div class="brand"><div class="logo">AI</div>Interview Copilot</div>
+  <div class="right"><span class="mu" style="font-size:13px">Room ready</span><button class="iconbtn" id="themeBtn" type="button">🌓</button></div>
+</div>
+<div class="page">
+  <div class="lobby">
+    <div>
+      <span class="chip role">ML powered</span>
+      <h1>Your interviewer has <em>read your resume.</em></h1>
+      <p class="mu">Join a mock interview room. Our model detects your role, asks questions built from your skills, listens to your voice and scores every answer.</p>
+      <ul class="checks">
+        <li><b>1</b>Upload resume, role is detected by Random Forest</li>
+        <li><b>2</b>Answer by voice, camera on, or keyboard</li>
+        <li><b>3</b>Get a candidate report card with progress history</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="margin:0 0 14px">Join interview</h3>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      <form id="form" action="/start" method="post" enctype="multipart/form-data">
+        <label class="drop" id="drop"><div style="font-size:28px">📄</div><span id="dt">Upload resume (PDF)</span>
+          <input type="file" name="resume_file" id="file" accept=".pdf"></label>
+        <p class="or">or paste text</p>
+        <textarea name="resume_text" id="text" rows="4" placeholder="Paste your resume text..."></textarea>
+        <button type="button" class="ghost full" id="sample" style="margin-top:8px">Use sample resume</button>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" id="optCam"> Turn on my camera in the room (stays on your device)</label>
+          <label class="opt"><input type="checkbox" id="optVoice" checked> Interviewer reads questions aloud</label>
+        </div>
+        <button type="submit" class="full" id="go">Join Interview →</button>
+      </form>
+    </div>
   </div>
+
+  <div class="row g-3" style="margin-top:34px">
+    <div class="col-md-4"><div class="statc"><b>24</b><span>job roles detected from your resume</span></div></div>
+    <div class="col-md-4"><div class="statc"><b>70.6%</b><span>classifier accuracy (Random Forest)</span></div></div>
+    <div class="col-md-4"><div class="statc"><b>TF-IDF + Cosine</b><span>answer scoring with keyword feedback</span></div></div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  $("themeBtn").onclick = () => {
+    const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem("ic_theme", t); } catch (e) {}
+  };
+  try {
+    const o = JSON.parse(localStorage.getItem("ic_opts") || "{}");
+    $("optCam").checked = !!o.cam;
+    if (o.voice === false) $("optVoice").checked = false;
+  } catch (e) {}
+  $("file").onchange = () => {
+    if ($("file").files.length) { $("dt").textContent = "✅ " + $("file").files[0].name; $("drop").classList.add("has"); }
+  };
+  $("sample").onclick = () => {
+    $("text").value = "Experienced software developer with strong skills in Python, Flask, SQL and JavaScript. Built web applications, worked with Git, and used machine learning for data analysis. Good communication and teamwork. Completed projects using HTML, CSS and React.";
+  };
+  $("form").onsubmit = () => {
+    try { localStorage.setItem("ic_opts", JSON.stringify({cam: $("optCam").checked, voice: $("optVoice").checked})); } catch (e) {}
+    $("go").disabled = true; $("go").textContent = "Preparing your room...";
+  };
+</script>
 </body>
 </html>

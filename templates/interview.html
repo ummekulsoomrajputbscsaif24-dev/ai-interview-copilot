@@ -1,101 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Interview</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interview Room</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('ic_theme')||'dark'}catch(e){}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-  <div class="card">
-    <p class="meta">Predicted role: <b>{{ category }}</b><br>Skills found: {{ skills or "none" }}</p>
-    <p id="progress"></p>
-    <h2 id="question"></h2>
+<div class="top">
+  <div class="brand"><div class="logo">AI</div>Interview Copilot</div>
+  <div class="right">
+    <div class="rec"><span class="dot"></span>REC <span class="timer" id="timer">00:00</span></div>
+    <button class="iconbtn" id="themeBtn" type="button">🌓</button>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
 
-    <textarea id="answer" rows="6" placeholder="Type your answer or use the mic..."></textarea>
-    <div class="row">
-      <button id="mic" type="button">🎤 Speak</button>
-      <button id="submit" type="button">Submit Answer</button>
+<div class="page" style="padding-bottom:150px">
+  <span class="chip role">{{ category }}</span>
+  {% for s in skills.split(', ') if s %}<span class="chip">{{ s }}</span>{% endfor %}
+  <div class="dots" id="dots" style="margin-top:10px"></div>
+
+  <div class="room">
+    <div class="tile" id="aiTile"><div class="avatar">AI</div><span class="tag">AI Interviewer</span></div>
+    <div class="tile me" id="meTile">
+      <video id="cam" autoplay muted playsinline></video>
+      <div class="avatar">You</div>
+      <div class="wave"><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="tag">You</span>
     </div>
-
-    <div id="feedback" class="feedback" style="display:none;"></div>
-    <button id="next" type="button" style="display:none;">Next Question</button>
   </div>
 
+  <div class="caption">
+    <small id="prog"></small>
+    <h2 id="question"></h2>
+    <div class="tbar" id="tbar"><i id="tfill"></i></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="ans">
+    <textarea id="answer" rows="5" placeholder="Your answer appears here as you speak, or type it... (Ctrl + Enter to submit)"></textarea>
+    <div class="count" id="count">0 words</div>
+  </div>
+
+  <div class="panel fb" id="feedback">
+    <div class="fbtop">
+      <div class="ring"><svg width="120" height="120" viewBox="0 0 130 130"><circle class="bg" cx="65" cy="65" r="54"/><circle class="fg" id="fg" cx="65" cy="65" r="54"/></svg>
+        <div class="num"><div><span id="sn">0</span><small>/ 100</small></div></div></div>
+      <div class="meters">
+        <div class="meter"><label>Relevance <span id="rt"></span></label><div><i id="rb"></i></div></div>
+        <div class="meter"><label>Keyword coverage <span id="ct"></span></label><div><i id="cb"></i></div></div>
+        <div id="chips" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <ul class="tips" id="tips"></ul>
+  </div>
+</div>
+
+<div class="bar-ctl">
+  <button class="ghost" id="replay" type="button">🔊 Repeat</button>
+  <button class="ghost" id="hintBtn" type="button">💡 Hint</button>
+  <button class="ghost" id="camBtn" type="button">📷 Camera</button>
+  <button class="ghost mic" id="mic" type="button">🎤 Speak</button>
+  <button id="submit" type="button">Submit</button>
+  <button id="next" type="button" style="display:none"></button>
+</div>
+
 <script>
-  const questions = {{ questions | tojson }};
-  let current = 0;
+const questions = {{ questions | tojson }};
+let current = 0, listening = false, tleft = 120, tmr = null, stream = null;
+const $ = id => document.getElementById(id), ans = $("answer");
+let opts = {cam: false, voice: true};
+try { opts = Object.assign(opts, JSON.parse(localStorage.getItem("ic_opts") || "{}")); } catch (e) {}
 
-  const qEl = document.getElementById("question");
-  const progEl = document.getElementById("progress");
-  const ansEl = document.getElementById("answer");
-  const fbEl = document.getElementById("feedback");
-  const nextBtn = document.getElementById("next");
-  const submitBtn = document.getElementById("submit");
+const HINTS = [
+  "Use the STAR method: Situation, Task, Action, Result. Give one real example.",
+  "Start with a direct answer in one sentence, then explain with an example.",
+  "Aim for 40+ words and mention the key terms of the topic clearly."
+];
 
-  function speak(text) {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
-      window.speechSynthesis.speak(u);
-    }
+$("themeBtn").onclick = () => {
+  const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("ic_theme", t); } catch (e) {}
+};
+
+function toast(msg) {
+  const d = document.createElement("div");
+  d.className = "toast-i"; d.textContent = msg;
+  $("toasts").appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+function confetti() {
+  const colors = ["#ff7a59", "#37d6b5", "#f5b942", "#7c5cff"];
+  for (let i = 0; i < 45; i++) {
+    const c = document.createElement("div");
+    c.className = "conf";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colors[i % colors.length];
+    c.style.animationDelay = Math.random() * .6 + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3200);
   }
+}
 
-  function showQuestion() {
-    qEl.textContent = questions[current];
-    progEl.textContent = "Question " + (current + 1) + " of " + questions.length;
-    ansEl.value = "";
-    fbEl.style.display = "none";
-    nextBtn.style.display = "none";
-    submitBtn.style.display = "inline-block";
-    speak(questions[current]);
+// total timer
+let sec = 0;
+setInterval(() => { sec++; $("timer").textContent = String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0"); }, 1000);
+
+// per-question countdown
+function startQTimer() {
+  clearInterval(tmr); tleft = 120;
+  $("tbar").classList.remove("warn"); $("tfill").style.width = "100%";
+  tmr = setInterval(() => {
+    tleft--;
+    $("tfill").style.width = (tleft / 120 * 100) + "%";
+    if (tleft === 20) { $("tbar").classList.add("warn"); toast("20 seconds left, start wrapping up"); }
+    if (tleft <= 0) { clearInterval(tmr); toast("Time is up for this question"); }
+  }, 1000);
+}
+
+function drawDots() {
+  $("dots").innerHTML = questions.map((_, i) => '<i class="' + (i < current ? 'done' : i === current ? 'now' : '') + '"></i>').join("");
+}
+function speak(t) {
+  if (opts.voice === false || !("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "en-US";
+  u.onstart = () => $("aiTile").classList.add("speaking");
+  u.onend = u.onerror = () => $("aiTile").classList.remove("speaking");
+  speechSynthesis.speak(u);
+}
+function count() {
+  const v = ans.value.trim();
+  const n = v ? v.split(/\s+/).length : 0;
+  const f = (v.match(/\b(um|uh|like|basically|actually|you know)\b/gi) || []).length;
+  $("count").textContent = n + " words" + (f ? " · " + f + " filler word" + (f > 1 ? "s" : "") : "");
+}
+ans.oninput = count;
+ans.addEventListener("keydown", e => { if (e.ctrlKey && e.key === "Enter") $("submit").click(); });
+
+function show() {
+  $("question").textContent = questions[current];
+  $("prog").textContent = "QUESTION " + (current + 1) + " OF " + questions.length;
+  ans.value = ""; count(); drawDots();
+  $("hint").style.display = "none";
+  $("feedback").style.display = "none";
+  $("next").style.display = "none"; $("submit").style.display = "inline-block";
+  $("submit").disabled = false; $("submit").textContent = "Submit";
+  startQTimer(); speak(questions[current]);
+}
+$("replay").onclick = () => speak(questions[current]);
+$("hintBtn").onclick = () => {
+  const h = $("hint");
+  h.textContent = "💡 " + HINTS[current % HINTS.length];
+  h.style.display = h.style.display === "block" ? "none" : "block";
+};
+
+// camera (video stays on this device, nothing is uploaded)
+async function toggleCam() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop()); stream = null;
+    $("meTile").classList.remove("cam"); return;
   }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video: true});
+    $("cam").srcObject = stream; $("meTile").classList.add("cam");
+  } catch (e) { toast("Camera permission denied or not available"); }
+}
+$("camBtn").onclick = toggleCam;
 
-  submitBtn.onclick = async () => {
-    const res = await fetch("/answer", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({index: current, answer: ansEl.value})
-    });
-    const r = await res.json();
-    fbEl.innerHTML = "<b>Score: " + r.score + "/100</b><br>" + r.feedback.join(" ");
-    fbEl.style.display = "block";
-    submitBtn.style.display = "none";
-    nextBtn.style.display = "inline-block";
-    nextBtn.textContent = current === questions.length - 1 ? "See Results" : "Next Question";
+const cc = s => s >= 75 ? "good-c" : s >= 50 ? "mid-c" : "bad-c";
+
+$("submit").onclick = async () => {
+  if (listening) $("mic").click();
+  clearInterval(tmr);
+  $("submit").disabled = true; $("submit").textContent = "Evaluating...";
+  const r = await (await fetch("/answer", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({index: current, answer: ans.value})})).json();
+  $("sn").textContent = r.score;
+  const fg = $("fg"); fg.setAttribute("class", "fg " + cc(r.score));
+  fg.style.transition = "stroke-dashoffset 1.2s ease"; fg.style.strokeDashoffset = 339.29 * (1 - r.score / 100);
+  $("rt").textContent = r.relevance + "%"; $("ct").textContent = r.coverage + "%";
+  $("rb").style.width = r.relevance + "%"; $("cb").style.width = r.coverage + "%";
+  $("chips").innerHTML = r.found.map(k => '<span class="chip good">✓ ' + k + '</span>').join("") +
+                         r.missed.map(k => '<span class="chip bad">✗ ' + k + '</span>').join("");
+  $("tips").innerHTML = r.feedback.map(f => "<li>" + f + "</li>").join("");
+  $("feedback").style.display = "block";
+  $("submit").style.display = "none"; $("next").style.display = "inline-block";
+  $("next").textContent = current === questions.length - 1 ? "Finish & Report" : "Next →";
+  if (r.score >= 75) { confetti(); toast("🎉 Excellent answer!"); }
+  $("feedback").scrollIntoView({behavior: "smooth", block: "center"});
+};
+$("next").onclick = () => {
+  if (current === questions.length - 1) { if (stream) stream.getTracks().forEach(t => t.stop()); location.href = "/result"; }
+  else { current++; show(); window.scrollTo({top: 0, behavior: "smooth"}); }
+};
+
+// voice input (Chrome / Edge)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const rec = new SR(); rec.lang = "en-US"; rec.continuous = true;
+  $("mic").onclick = () => {
+    if (!listening) { speechSynthesis.cancel(); rec.start(); listening = true;
+      $("mic").textContent = "⏹ Stop"; $("mic").classList.add("on"); $("meTile").classList.add("live"); }
+    else { rec.stop(); listening = false;
+      $("mic").textContent = "🎤 Speak"; $("mic").classList.remove("on"); $("meTile").classList.remove("live"); }
   };
+  rec.onresult = e => { let t = ""; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript + " "; ans.value = t.trim(); count(); };
+} else { $("mic").style.display = "none"; }
 
-  nextBtn.onclick = () => {
-    if (current === questions.length - 1) {
-      window.location.href = "/result";
-    } else {
-      current++;
-      showQuestion();
-    }
-  };
-
-  // Voice input (works in Chrome / Edge)
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const micBtn = document.getElementById("mic");
-  if (SR) {
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.continuous = true;
-    let listening = false;
-    micBtn.onclick = () => {
-      if (!listening) { rec.start(); micBtn.textContent = "⏹ Stop"; listening = true; }
-      else { rec.stop(); micBtn.textContent = "🎤 Speak"; listening = false; }
-    };
-    rec.onresult = (e) => {
-      let text = "";
-      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript + " ";
-      ansEl.value = text.trim();
-    };
-  } else {
-    micBtn.style.display = "none";
-  }
-
-  showQuestion();
+if (opts.cam) toggleCam();
+show();
 </script>
 </body>
 </html>
